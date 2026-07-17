@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="docTitle">Palworld Server Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-glow"></div>
+    <div class="container">
+        <header>
+            <div class="logo-area">
+                <span class="logo-icon">🎮</span>
+                <div>
+                    <h1>Palworld</h1>
+                    <p class="subtitle" data-i18n="subtitle">On-Demand Manager</p>
+                </div>
+            </div>
+            <div class="system-time" id="system-time">--:--:--</div>
+        </header>
+
+        <main class="dashboard">
+            <!-- Status Card -->
+            <section class="card glass status-card">
+                <div class="card-header">
+                    <h2 data-i18n="statusTitle">Server Status</h2>
+                    <span class="status-badge" id="status-badge" data-i18n="statusUnknown">Unknown</span>
+                </div>
+                <div class="status-content">
+                    <div class="status-indicator">
+                        <div class="pulse-ring" id="pulse-ring"></div>
+                        <div class="pulse-dot" id="pulse-dot"></div>
+                    </div>
+                    <div class="status-details">
+                        <div class="detail-item">
+                            <span class="label" data-i18n="stateLabel">State</span>
+                            <span class="value" id="status-text" data-i18n="loading">Loading...</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="label" data-i18n="playersLabel">Active Players</span>
+                            <span class="valueHighlight" id="player-count">0</span>
+                        </div>
+                        <div class="detail-item" id="countdown-item">
+                            <span class="label" data-i18n="countdownLabel">Idle shutdown in</span>
+                            <span class="value" id="countdown-text">--:--</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Control Card -->
+            <section class="card glass control-card">
+                <h2 data-i18n="controlTitle">Control Actions</h2>
+                <div class="button-grid">
+                    <button class="btn btn-start" id="btn-start" onclick="triggerAction('start')">
+                        <span class="btn-icon">⚡</span> <span data-i18n="btnStart">Start</span>
+                    </button>
+                    <button class="btn btn-save" id="btn-save" onclick="triggerAction('save')">
+                        <span class="btn-icon">💾</span> <span data-i18n="btnSave">Save</span>
+                    </button>
+                    <button class="btn btn-stop" id="btn-stop" onclick="triggerAction('stop')">
+                        <span class="btn-icon">🛑</span> <span data-i18n="btnStop">Graceful Stop</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Logs Card -->
+            <section class="card glass logs-card">
+                <div class="card-header">
+                    <h2 data-i18n="logsTitle">Recent Logs</h2>
+                    <div class="log-actions">
+                        <label for="log-limit" data-i18n="linesLabel">Lines:</label>
+                        <select id="log-limit" onchange="fetchLogs()">
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                            <option value="200">200</option>
+                        </select>
+                        <button class="btn-text" onclick="fetchLogs()" data-i18n="refreshBtn">🔄 Refresh</button>
+                    </div>
+                </div>
+                <pre class="terminal" id="log-terminal" data-i18n="logsLoading">Retrieving logs...</pre>
+            </section>
+        </main>
+
+        <footer>
+            <p data-i18n="footer">Hosted with Docker • Written in Go</p>
+        </footer>
+    </div>
+
+    <script>
+        // i18n Dictionaries
+        const translations = {
+            fr: {
+                docTitle: "Palworld Server Manager",
+                subtitle: "Gestionnaire à la demande",
+                statusTitle: "Statut du Serveur",
+                statusUnknown: "Indéterminé",
+                stateLabel: "État",
+                playersLabel: "Joueurs actifs",
+                countdownLabel: "Inactivité avant arrêt",
+                controlTitle: "Actions de Contrôle",
+                btnStart: "Démarrer",
+                btnSave: "Sauvegarder",
+                btnStop: "Arrêter proprement",
+                logsTitle: "Logs Récents",
+                linesLabel: "Lignes :",
+                refreshBtn: "🔄 Rafraîchir",
+                footer: "Hébergé avec Docker • Écrit en Go",
+                loading: "Chargement...",
+                logsLoading: "Récupération des logs en cours...",
+                
+                // Dynamic statuses
+                online: "En Ligne",
+                starting: "Démarrage",
+                stopping: "Arrêt en cours",
+                offline: "Hors Ligne",
+                connError: "Erreur Connexion",
+                
+                // Prompts & Errors
+                confirmAction: "Confirmer l'action : ",
+                errorLabel: "Erreur : ",
+                netError: "Erreur réseau : ",
+                noLogs: "Aucun log disponible."
+            },
+            en: {
+                docTitle: "Palworld Server Manager",
+                subtitle: "On-Demand Manager",
+                statusTitle: "Server Status",
+                statusUnknown: "Unknown",
+                stateLabel: "State",
+                playersLabel: "Active Players",
+                countdownLabel: "Idle shutdown in",
+                controlTitle: "Control Actions",
+                btnStart: "Start",
+                btnSave: "Save",
+                btnStop: "Graceful Stop",
+                logsTitle: "Recent Logs",
+                linesLabel: "Lines:",
+                refreshBtn: "🔄 Refresh",
+                footer: "Hosted with Docker • Written in Go",
+                loading: "Loading...",
+                logsLoading: "Retrieving logs...",
+                
+                // Dynamic statuses
+                online: "Online",
+                starting: "Starting",
+                stopping: "Stopping",
+                offline: "Offline",
+                connError: "Connection Error",
+                
+                // Prompts & Errors
+                confirmAction: "Confirm action: ",
+                errorLabel: "Error: ",
+                netError: "Network error: ",
+                noLogs: "No logs available."
+            }
+        };
+
+        // Detect language
+        const userLang = (navigator.language || navigator.userLanguage).startsWith('fr') ? 'fr' : 'en';
+        const t = translations[userLang];
+
+        // Apply translations to data-i18n marked elements
+        function applyTranslations() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (t[key]) {
+                    el.innerText = t[key];
+                }
+            });
+        }
+        applyTranslations();
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('system-time').innerText = now.toLocaleTimeString(userLang === 'fr' ? 'fr-FR' : 'en-US');
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
+
+        async function fetchStatus() {
+            try {
+                const response = await fetch('/api/status');
+                if (!response.ok) throw new Error(t.connError);
+                const data = await response.json();
+                
+                const badge = document.getElementById('status-badge');
+                const text = document.getElementById('status-text');
+                const players = document.getElementById('player-count');
+                const countdownText = document.getElementById('countdown-text');
+                const countdownItem = document.getElementById('countdown-item');
+                const dot = document.getElementById('pulse-dot');
+                const ring = document.getElementById('pulse-ring');
+                
+                // Reset classes
+                badge.className = 'status-badge';
+                dot.className = 'pulse-dot';
+                ring.className = 'pulse-ring';
+
+                // Display localized state
+                const stateKey = data.state; // e.g., 'running', 'starting', 'stopping', 'offline'
+                let localizedState = stateKey.toUpperCase();
+                if (stateKey === 'running' && t.online) localizedState = t.online;
+                if (stateKey === 'starting' && t.starting) localizedState = t.starting;
+                if (stateKey === 'stopping' && t.stopping) localizedState = t.stopping;
+                if (stateKey === 'stopped' && t.offline) localizedState = t.offline;
+                
+                text.innerText = localizedState;
+                players.innerText = data.players;
+
+                // Configure state aesthetics
+                if (data.state === 'running') {
+                    badge.innerText = t.online;
+                    badge.classList.add('online');
+                    dot.classList.add('online');
+                    ring.classList.add('online');
+                    
+                    document.getElementById('btn-start').disabled = true;
+                    document.getElementById('btn-stop').disabled = false;
+                    document.getElementById('btn-save').disabled = false;
+                } else if (data.state === 'starting') {
+                    badge.innerText = t.starting;
+                    badge.classList.add('pending');
+                    dot.classList.add('pending');
+                    ring.classList.add('pending');
+                    
+                    document.getElementById('btn-start').disabled = true;
+                    document.getElementById('btn-stop').disabled = true;
+                    document.getElementById('btn-save').disabled = true;
+                } else if (data.state === 'stopping') {
+                    badge.innerText = t.stopping;
+                    badge.classList.add('pending');
+                    dot.classList.add('pending');
+                    ring.classList.add('pending');
+                    
+                    document.getElementById('btn-start').disabled = true;
+                    document.getElementById('btn-stop').disabled = true;
+                    document.getElementById('btn-save').disabled = true;
+                } else {
+                    badge.innerText = t.offline;
+                    badge.classList.add('offline');
+                    dot.classList.add('offline');
+                    
+                    document.getElementById('btn-start').disabled = false;
+                    document.getElementById('btn-stop').disabled = true;
+                    document.getElementById('btn-save').disabled = true;
+                }
+
+                // Countdown logic
+                if (data.state === 'running' && data.idle_remaining_sec > 0) {
+                    countdownItem.style.display = 'flex';
+                    const minutes = Math.floor(data.idle_remaining_sec / 60);
+                    const seconds = data.idle_remaining_sec % 60;
+                    countdownText.innerText = `${minutes}m ${seconds}s`;
+                } else {
+                    countdownItem.style.display = 'none';
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('status-text').innerText = t.connError;
+            }
+        }
+
+        async function triggerAction(action) {
+            if (!confirm(`${t.confirmAction}${action}?`)) return;
+            
+            try {
+                const response = await fetch('/api/control', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action })
+                });
+                
+                const data = await response.json();
+                if (!response.ok) {
+                    alert(`${t.errorLabel}${data.error || 'Unknown'}`);
+                } else {
+                    fetchStatus();
+                    setTimeout(fetchLogs, 1000);
+                }
+            } catch (err) {
+                alert(`${t.netError}${err.message}`);
+            }
+        }
+
+        async function fetchLogs() {
+            const limit = document.getElementById('log-limit').value;
+            const terminal = document.getElementById('log-terminal');
+            try {
+                const response = await fetch(`/api/logs?limit=${limit}`);
+                const text = await response.text();
+                terminal.innerText = text || t.noLogs;
+                terminal.scrollTop = terminal.scrollHeight;
+            } catch (err) {
+                terminal.innerText = t.connError;
+            }
+        }
+
+        // Auto-refresh loops
+        setInterval(fetchStatus, 3000);
+        setInterval(fetchLogs, 10000);
+
+        // Initial load
+        fetchStatus();
+        fetchLogs();
+    </script>
+</body>
+</html>

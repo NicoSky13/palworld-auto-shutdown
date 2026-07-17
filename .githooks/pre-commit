@@ -1,0 +1,8 @@
+#!/bin/sh
+
+# Format Go code
+echo "Formatting Go files with gofmt..."
+gofmt -w .
+
+# Add formatted files back to the commit staging area
+git add $(git diff --name-only --cached | grep '\.go$')

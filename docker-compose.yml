@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Security proxy for the Docker socket.
+  # Prevents palworld-manager from having direct root access on the host.
+  docker-socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: docker-socket-proxy
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro # Read-only access to the host docker socket
+    environment:
+      - CONTAINERS=1 # Allow container inspection, start, and stop operations only
+    networks:
+      - palworld-net
+
+  palworld-server:
+    image: thijsvanloef/palworld-server-docker:latest
+    container_name: palworld-server
+    restart: "no"
+    environment:
+      - PORT=8211
+      - PLAYERS=16
+      - MULTIPLAY_REST_API_ENABLED=true
+      - MULTIPLAY_REST_API_PORT=8212
+      - ADMIN_PASSWORD=your_admin_password
+      - COMMUNITY=false
+      # Add other Palworld environment variables as needed:
+      # - SERVER_NAME=My On-Demand Palworld Server
+      # - SERVER_DESCRIPTION=Wakes up and shuts down automatically
+    volumes:
+      - ./palworld-data:/pal/saved
+    # Note: Port 8211/UDP is NOT exposed publicly here on the host.
+    # The manager (proxy) will expose it publicly to capture traffic and wake the server.
+    expose:
+      - "8211/udp"
+      - "8212/tcp"
+    networks:
+      - palworld-net
+
+  palworld-manager:
+    # If building the image locally:
+    # build: .
+    # Or using the pre-built image from GitHub Container Registry (GHCR):
+    image: ghcr.io/nicosky13/palworld-auto-shutdown:latest
+    container_name: palworld-manager
+    restart: always
+    ports:
+      - "8211:8211/udp" # UDP Proxy listening publicly on 8211/UDP
+      - "8213:8213/tcp" # Web admin panel (Optional)
+    environment:
+      # Tell docker CLI to communicate through the secure socket proxy
+      - DOCKER_HOST=tcp://docker-socket-proxy:2375
+      - CONTAINER_NAME=palworld-server
+      - PALWORLD_API_URL=http://palworld-server:8212
+      - PALWORLD_API_PASSWORD=your_admin_password
+      - PALWORLD_INTERNAL_ADDR=palworld-server:8211
+      - IDLE_TIMEOUT_MINUTES=15
+      - CHECK_INTERVAL_SECONDS=60
+      - ENABLE_WEB_UI=true
+      - WEB_PORT=8213
+      - WEB_USER=admin
+      - WEB_PASSWORD=a_secure_web_password
+    networks:
+      - palworld-net
+    depends_on:
+      - docker-socket-proxy
+      - palworld-server
+
+networks:
+  palworld-net:
+    driver: bridge
