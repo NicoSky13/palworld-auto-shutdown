@@ -96,6 +96,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro # Read-only access to the host docker socket
     environment:
       - CONTAINERS=1 # Allow container inspection, start, and stop operations only
+      - POST=1       # Required to allow starting and stopping containers (POST requests)
     networks:
       - palworld-net
 
