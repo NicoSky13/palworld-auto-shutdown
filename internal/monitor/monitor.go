@@ -306,27 +306,15 @@ func (m *Monitor) shutdownSequence() {
 		if err == nil {
 			resp.Body.Close()
 			if resp.StatusCode == http.StatusOK {
-				log.Printf("[Monitor] Graceful shutdown requested via API")
-				// Wait for container to stop naturally
-				for i := 0; i < 30; i++ {
-					m.sleepFn(2 * time.Second)
-					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-					status, err := m.dockerClient.GetContainerStatus(ctx, m.containerName)
-					cancel()
-					if err == nil && (status == "exited" || status == "stopped" || status == "") {
-						log.Printf("[Monitor] Container stopped gracefully")
-						m.mu.Lock()
-						m.state = StateStopped
-						m.mu.Unlock()
-						return
-					}
-				}
+				log.Printf("[Monitor] Graceful shutdown requested via API. Waiting for server to process...")
+				m.sleepFn(5 * time.Second) // Give the server 5 seconds to write save files and start shutting down
 			}
 		}
 	}
 
-	// Fallback to Docker stop if API shutdown failed or container is still running
-	log.Printf("[Monitor] API shutdown failed or timed out. Stopping container via Docker...")
+	// Always call Docker StopContainer to ensure Docker registers the container as manually stopped.
+	// This prevents Docker restart policies (like always, unless-stopped, or on-failure) from automatically waking it back up.
+	log.Printf("[Monitor] Stopping container via Docker to prevent auto-restart...")
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	if err := m.dockerClient.StopContainer(ctx, m.containerName); err != nil {

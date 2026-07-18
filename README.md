@@ -52,7 +52,8 @@ sequenceDiagram
 
     Proxy->>Server: POST /v1/api/save (Saves world state)
     Proxy->>Server: POST /v1/api/shutdown (Graceful API shutdown)
-    Server->>Server: Saves and shuts down process, container exits
+    Proxy->>SocketProxy: Stops container via Docker API (disables auto-restart)
+    SocketProxy->>Server: Stop container
 ```
 
 ---
