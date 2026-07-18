@@ -29,7 +29,7 @@ services:
       # - SERVER_NAME=My On-Demand Palworld Server
       # - SERVER_DESCRIPTION=Wakes up and shuts down automatically
     volumes:
-      - ./palworld-data:/pal/saved
+      - ./palworld-data:/palworld/
     # Note: Port 8211/UDP is NOT exposed publicly here on the host.
     # The manager (proxy) will expose it publicly to capture traffic and wake the server.
     expose:

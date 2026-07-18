@@ -111,7 +111,7 @@ services:
       - ADMIN_PASSWORD=your_admin_password
       - COMMUNITY=false
     volumes:
-      - ./palworld-data:/pal/saved
+      - ./palworld-data:/palworld/
     expose:
       - "8211/udp"
       - "8212/tcp"
